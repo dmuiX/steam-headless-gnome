@@ -34,6 +34,8 @@ docker logs -f steam-headless-test
 
 This starts GNOME on a **virtual X11 display** without host input, display output or network access. After the Sunshine startup message, check the internal HTTPS endpoint with `docker exec steam-headless-test curl -k -sS -o /dev/null -w '%{http_code}\n' https://127.0.0.1:47990/`. Use `docker stop steam-headless-test` to clean up.
 
+For Bluetooth, the container uses the host BlueZ through a filtered D-Bus proxy socket (for example `xdg-dbus-proxy --filter --talk=org.bluez`) mounted at `/run/steam-headless-bluez/bus`. PulseAudio and Blueman use it when present; without it they use the container system bus, which has no BlueZ. Do not mount the host system bus socket directly.
+
 For a physical setup, `PHYSICAL=1` expects host-specific DRM, VT and input device configuration. The included `xorg.conf` is an example, not a universal hardware profile. Use a dedicated host bind mount for `/home/default` writable by UID 1000 if you want persistent Steam and Sunshine state. Keep the Sunshine admin interface off the public internet.
 
 ## 🔒 Password-protected desktop (development)
