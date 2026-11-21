@@ -56,6 +56,15 @@ RUN set -eux; \
     glib-compile-schemas --strict "$destination/schemas"; \
     rm /tmp/wack-shell.tar.gz
 
+RUN set -eux; export DEBIAN_FRONTEND=noninteractive; \
+    apt-get -o APT::Update::Error-Mode=any update; \
+    apt-get install -y --no-install-recommends -t trixie-backports gdm3 libpam-systemd; \
+    ln -sfn /usr/lib/systemd/system/gdm.service /etc/systemd/system/display-manager.service; \
+    rm -rf /var/lib/apt/lists/*
+COPY --chmod=0644 gdm.conf /etc/gdm3/daemon.conf
+COPY --chmod=0644 gdm-logind.conf /etc/systemd/system/gdm.service.d/10-logind.conf
+COPY --chmod=0644 steam-headless-session.desktop /etc/xdg/autostart/steam-headless-session.desktop
+COPY --chmod=0644 start-gdm.sh /usr/local/bin/steam-headless-gdm.sh
 COPY --chmod=0644 start.sh /usr/local/bin/steam-headless-start.sh
 COPY --chmod=0644 input-devices.sh /usr/local/bin/steam-headless-input.sh
 COPY --chmod=0644 sunshine-xtest-bridge.py /usr/local/lib/steam-headless/sunshine-xtest-bridge.py
