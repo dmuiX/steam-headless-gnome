@@ -6,10 +6,19 @@ A standalone **Debian 13 · GNOME on Xorg · Steam · Sunshine** container for L
 
 ## ✨ What’s inside
 
-- 🖥️ GNOME on Xorg, with Colemak and German keyboard layouts, Dash to Dock, and AppIndicator
+- 🖥️ GNOME on Xorg, with Colemak and German keyboard layouts, Dash to Dock, and a top-right **Extension List** menu
+- 🔔 AppIndicator shows Sunshine’s tray icon and Deskflow’s icon once its GUI is open. Existing profiles must have AppIndicator and Extension List enabled.
+- 📊 **System Monitor Next** shows system metrics in the top bar. **WACK Shell** and **WACK Sonoma Lockscreen** are installed and can be enabled from Extension List; they are off by default. System Pulse is not bundled because it requires GNOME Shell 50, while this image uses GNOME 48.
 - 🕹️ The Debian Steam installer with 32-bit Mesa graphics drivers. Open Steam from the desktop to download the client and sign in; games and Proton are not bundled.
 - ☀️ Sunshine with software encoding in virtual mode and VAAPI configured in physical mode
 - 🦊 Firefox ESR
+- ⌨️ Deskflow for sharing a keyboard and mouse over the LAN. It does not start automatically, and the image does not publish its port.
+
+### ⌨️ Deskflow
+
+Open **Deskflow** in GNOME. To control this desktop from another computer, configure that computer as the Deskflow server and this desktop as a client. Use the server’s private LAN address and verify its TLS fingerprint. No incoming Deskflow port is needed on the container host.
+
+If you use the container as the server instead, restrict TCP `24800` to the trusted LAN at the host firewall (including Docker-forwarded traffic) and keep TLS enabled. Do not expose Deskflow through a public router or internet port forwarding.
 
 ## 🛠️ Build and try it locally
 
@@ -26,6 +35,10 @@ docker logs -f steam-headless-test
 This starts GNOME on a **virtual X11 display** without host input, display output or network access. After the Sunshine startup message, check the internal HTTPS endpoint with `docker exec steam-headless-test curl -k -sS -o /dev/null -w '%{http_code}\n' https://127.0.0.1:47990/`. Use `docker stop steam-headless-test` to clean up.
 
 For a physical setup, `PHYSICAL=1` expects host-specific DRM, VT and input device configuration. The included `xorg.conf` is an example, not a universal hardware profile. Use a dedicated host bind mount for `/home/default` writable by UID 1000 if you want persistent Steam and Sunshine state. Keep the Sunshine admin interface off the public internet.
+
+## 📦 Debian Backports
+
+The build prefers `trixie-backports` for all APT package installations, including dependencies, and falls back to Debian stable and its security repositories for packages without backports. This includes Mesa for both amd64 and the 32-bit Steam runtime. GNOME Shell stays at 48: Debian does not provide a GNOME 50 backport for Trixie, and this image intentionally uses the Debian GNOME Xorg session. Sunshine and extensions downloaded outside APT keep their own pins.
 
 ## 🤖 CI and updates
 
