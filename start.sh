@@ -4,6 +4,10 @@ set -euo pipefail
 [[ -e /.dockerenv ]] || { echo 'This script must run inside Docker.' >&2; exit 1; }
 if [[ ${1:-} == --session ]]; then
     [[ $EUID != 0 ]] || exit 1
+    # Existing homes can override the image defaults and disable all panel extensions.
+    if [[ $(gsettings get org.gnome.shell disable-user-extensions) == true ]]; then
+        gsettings set org.gnome.shell disable-user-extensions false
+    fi
     gnome-session --session=gnome --disable-acceleration-check &
     gnome_pid=$!
     trap 'kill "$gnome_pid" "${sunshine_pid:-}" "${bridge_pid:-}" 2>/dev/null || true' EXIT
@@ -48,6 +52,13 @@ if [[ ${1:-} == --session ]]; then
             printf 'capture = x11\nencoder = software\norigin_web_ui_allowed = pc\n' > "$config"
         fi
     fi
+    # GNOME can own the X11 window manager before the tray watcher exists.
+    for ((attempt=0; attempt<10; attempt++)); do
+        if busctl --user --timeout=1s --auto-start=no get-property org.kde.StatusNotifierWatcher \
+            /StatusNotifierWatcher org.kde.StatusNotifierWatcher IsStatusNotifierHostRegistered \
+            2>/dev/null | grep -qx 'b true'; then break; fi
+        sleep 1
+    done
     sunshine "$config" system_tray=enabled &
     sunshine_pid=$!
     children=("$gnome_pid" "$sunshine_pid")

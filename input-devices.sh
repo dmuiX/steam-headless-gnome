@@ -8,7 +8,15 @@ mode=${1:?Use init or watch.}
 install -d -m 0755 /dev/input
 
 declare -A previous current pending
-[[ $mode != watch ]] || pending=()
+state=/run/steam-headless-input/scan
+install -d -m 0700 -- "${state%/*}"
+if [[ $mode == watch ]]; then
+    # Keep the pre-Xorg snapshot: attaching the watcher is not a hotplug event.
+    while IFS=$'\t' read -r alias signature; do
+        [[ $alias =~ ^(event[0-9]+|steam-headless-(kbd|mouse-mxv|mouse-rcv))$ ]] || exit 1
+        previous[$alias]=$signature
+    done < "$state"
+fi
 scan() {
     local entry dev db name alias label node signature major minor old
     current=()
@@ -69,6 +77,11 @@ scan() {
 }
 
 scan
-if [[ $mode == watch ]]; then
+if [[ $mode == init ]]; then
+    umask 077
+    {
+        for alias in "${!previous[@]}"; do printf '%s\t%s\n' "$alias" "${previous[$alias]}"; done
+    } > "$state"
+else
     while sleep 1; do scan; done
 fi
