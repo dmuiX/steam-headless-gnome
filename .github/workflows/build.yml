@@ -13,7 +13,27 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  pull-request:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build and test
+        run: |
+          docker build --tag steam-headless-gnome:test .
+          bash .github/test-session.sh steam-headless-gnome:test
+
+  publish:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    concurrency:
+      group: ghcr-main
+      cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -38,9 +58,58 @@ jobs:
           path: ${{ runner.temp }}/debian-build-marker
           key: ${{ steps.debian.outputs.key }}
           lookup-only: true
-      - name: Build and tag locally
+      - name: Build and test the release image
         if: github.event_name != 'schedule' || steps.built.outputs.cache-hit != 'true'
-        run: docker build --pull --no-cache --tag "steam-headless-gnome:sha-${GITHUB_SHA}" .
+        run: |
+          docker build --pull --no-cache --platform linux/amd64 \
+            --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --tag steam-headless-gnome:test .
+          bash .github/test-session.sh steam-headless-gnome:test
+      - name: Scan for fixable high and critical vulnerabilities
+        if: github.event_name != 'schedule' || steps.built.outputs.cache-hit != 'true'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: steam-headless-gnome:test
+          scanners: vuln
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - name: Generate CycloneDX SBOM
+        if: github.event_name != 'schedule' || steps.built.outputs.cache-hit != 'true'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: steam-headless-gnome:test
+          format: cyclonedx
+          output: sbom.cdx.json
+          skip-setup-trivy: true
+      - name: Upload SBOM
+        if: github.event_name != 'schedule' || steps.built.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: sbom-cyclonedx
+          path: sbom.cdx.json
+          if-no-files-found: error
+      - name: Log in to GHCR
+        if: github.event_name != 'schedule' || steps.built.outputs.cache-hit != 'true'
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the tested image
+        if: github.event_name != 'schedule' || steps.built.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          version="sha-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker tag steam-headless-gnome:test "$image:$version"
+          docker tag steam-headless-gnome:test "$image:latest"
+          docker push "$image:$version"
+          docker push "$image:latest"
+          printf 'Published `%s` and `%s`.\n' "$image:$version" "$image:latest" >> "$GITHUB_STEP_SUMMARY"
       - name: Remember the successful scheduled build
         if: github.event_name == 'schedule' && steps.built.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

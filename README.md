@@ -2,7 +2,7 @@
 
 A standalone **Debian 13 · GNOME on Xorg · Steam · Sunshine** container for Linux gaming. No XFCE and no dependency on another Steam Headless image.
 
-> 🐧 **Linux amd64.** The isolated desktop works. Physical display, receiver reconnect, Moonlight gamepad and local Bluetooth audio still need end-to-end testing for this build. Build locally; there is no published registry image yet.
+> 🐧 **Linux amd64.** CI tests the desktop on a virtual X11 display. Physical DisplayPort (monitor on and off), Logitech reconnect, Moonlight video and gamepad input, and AirPods playback need end-to-end validation on the standalone image.
 
 ## ✨ What’s inside
 
@@ -12,6 +12,8 @@ A standalone **Debian 13 · GNOME on Xorg · Steam · Sunshine** container for L
 - 🦊 Firefox ESR
 
 ## 🛠️ Build and try it locally
+
+After a successful publish, the registry image is `ghcr.io/dmuix/steam-headless-gnome:latest`. To build and run locally instead:
 
 ```sh
 docker build --pull -t steam-headless-gnome:local .
@@ -27,6 +29,7 @@ For a physical setup, `PHYSICAL=1` expects host-specific DRM, VT and input devic
 
 ## 🤖 CI and updates
 
-- GitHub Actions builds on pushes to `main`, pull requests and manual dispatch. It tags the image `steam-headless-gnome:sha-<commit>` on the runner. **No registry push.**
-- The hourly schedule (minute 23 UTC) checks the Debian package indexes, including security updates. If the indexes or revision have changed since a successful scheduled build, it builds without Docker layer cache. This checks repository indexes, not whether an individual changed package is installed in the image. GitHub may delay scheduled runs.
+- Pull requests build and smoke-test the image without registry write access. On `main`, pushes and manual dispatch build, test and scan before publishing to GHCR.
+- 🔍 Trivy blocks publishing on fixable HIGH and CRITICAL findings and generates a CycloneDX SBOM as a workflow artifact. The exact tested image is published under `latest` and a unique `sha-<commit>-<run>-<attempt>` tag. For reproducible deployment, pin the registry digest.
+- The hourly schedule (minute 23 UTC) checks the Debian package indexes, including security updates. If the indexes or revision have changed since a successful scheduled publish, it builds without Docker layer cache. This checks repository indexes, not whether an individual changed package is installed in the image. GitHub may delay scheduled runs.
 - Dependabot checks the pinned Debian base daily and GitHub Actions weekly, proposing changes via pull request. The separately downloaded Sunshine package stays pinned; update its URL and SHA-256 together.
