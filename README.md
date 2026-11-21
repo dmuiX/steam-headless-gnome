@@ -38,7 +38,7 @@ For a physical setup, `PHYSICAL=1` expects host-specific DRM, VT and input devic
 
 ## 🔒 Password-protected desktop (development)
 
-The existing direct Xorg mode is not a security boundary for physical access. The `LOGIN_MODE=gdm` candidate uses GDM/Xorg and PAM with automatic and timed login disabled. It requires a private Docker cgroup namespace and accepts a read-only, root-owned `0400` password hash at `/run/secrets/desktop-password-hash`; never put the hash or password in the image, Git, or environment variables. It is not ready to deploy: the container runtime must first support the GDM/logind services, and physical login, lock and Moonlight unlock must pass end-to-end. The legacy mode is not a fallback when GDM mode fails.
+The existing direct Xorg mode is not a security boundary for physical access. The `LOGIN_MODE=gdm` candidate uses GDM/Xorg and PAM with automatic and timed login disabled. It requires a private Docker cgroup namespace and accepts a read-only, root-owned `0400` password hash at `/run/secrets/desktop-password-hash`; never put the hash or password in the image, Git, or environment variables. It is not ready to deploy: on our Docker test host, the default AppArmor profile prevented systemd from setting up mount namespaces for logind. An isolated diagnostic run without that profile started GDM and logind, but deploying with AppArmor disabled is not the proposed fix. Physical login, lock and Moonlight unlock still need end-to-end validation. The legacy mode is not a fallback when GDM mode fails.
 
 ## 📦 Debian Backports
 
