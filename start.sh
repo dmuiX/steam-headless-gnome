@@ -37,8 +37,8 @@ if [[ ${1:-} == --session ]]; then
         else
             pulseaudio --start --exit-idle-time=-1
         fi
-        pactl load-module module-null-sink sink_name=prototype_audio >/dev/null
-        pactl set-default-sink prototype_audio
+        pactl load-module module-null-sink sink_name=steam_headless_audio >/dev/null
+        pactl set-default-sink steam_headless_audio
         if [[ ! -e $config ]]; then
             printf 'capture = x11\nencoder = vaapi\nadapter_name = /dev/dri/renderD128\norigin_web_ui_allowed = lan\ngamepad = x360\nsystem_tray = disabled\n' > "$config"
         fi
@@ -57,7 +57,8 @@ if [[ ${1:-} == --session ]]; then
     exit "$status"
 fi
 runuser -u gamer -- test -w /home/default || { echo 'The desktop home is not writable by UID 1000.' >&2; exit 1; }
-install -d -m 0700 -o gamer -g gamer /run/gnome-prototype
+runtime_dir=/run/steam-headless
+install -d -m 0700 -o gamer -g gamer "$runtime_dir"
 install -d /run/dbus /run/systemd/seats /run/systemd/sessions /run/systemd/users
 dbus-daemon --system --fork --nopidfile
 /usr/lib/systemd/systemd-logind &
@@ -79,18 +80,18 @@ wait_for_bus_name org.freedesktop.PolicyKit1 "$!"
 wait_for_bus_name org.freedesktop.UPower "$!"
 if [[ ${PHYSICAL:-0} == 1 ]]; then
     render_gid=$(stat -c %g /dev/dri/renderD128)
-    if ! getent group "$render_gid" >/dev/null; then groupadd --gid "$render_gid" proto-render; fi
+    if ! getent group "$render_gid" >/dev/null; then groupadd --gid "$render_gid" steam-render; fi
     render_group=$(getent group "$render_gid" | cut -d: -f1)
     usermod -aG "$render_group" gamer
-    auth=/run/gnome-prototype/Xauthority
+    auth=$runtime_dir/Xauthority
     runuser -u gamer -- xauth -f "$auth" add :55 MIT-MAGIC-COOKIE-1 "$(mcookie)"
     [[ -c /dev/uinput ]] || mknod -m 0660 /dev/uinput c 10 223
     chgrp gamer /dev/uinput
-    bash /input-devices.sh init
+    bash /usr/local/bin/steam-headless-input.sh init
     # These paths are private to this container; clear leftovers from an earlier exit.
     rm -f -- /tmp/.X55-lock /tmp/.X11-unix/X55
     Xorg :55 vt7 -auth "$auth" -noreset -novtswitch -sharevts -nolisten tcp -dpms -s off \
-        -config /prototype-xorg.conf &
+        -config /etc/X11/steam-headless.conf &
     xorg_pid=$!
     trap 'kill "$xorg_pid" "${session_pid:-}" "${input_pid:-}" 2>/dev/null || true; wait "$xorg_pid" 2>/dev/null || true' EXIT
     trap 'exit 143' TERM INT
@@ -100,15 +101,15 @@ if [[ ${PHYSICAL:-0} == 1 ]]; then
         sleep 1
     done
     (( attempt < 20 )) || { echo 'Physical Xorg did not become ready.' >&2; exit 1; }
-    bash /input-devices.sh watch &
+    bash /usr/local/bin/steam-headless-input.sh watch &
     input_pid=$!
     runuser -u gamer -- env DISPLAY=:55 XAUTHORITY="$auth" PHYSICAL=1 \
-        XDG_RUNTIME_DIR=/run/gnome-prototype XDG_SESSION_TYPE=x11 XDG_CURRENT_DESKTOP=GNOME \
-        dbus-run-session -- bash /prototype-start.sh --session &
+        XDG_RUNTIME_DIR="$runtime_dir" XDG_SESSION_TYPE=x11 XDG_CURRENT_DESKTOP=GNOME \
+        dbus-run-session -- bash /usr/local/bin/steam-headless-start.sh --session &
     session_pid=$!
     wait -n "$xorg_pid" "$session_pid" "$input_pid"
     exit
 fi
-exec runuser -u gamer -- env XDG_RUNTIME_DIR=/run/gnome-prototype XDG_SESSION_TYPE=x11 \
+exec runuser -u gamer -- env XDG_RUNTIME_DIR="$runtime_dir" XDG_SESSION_TYPE=x11 \
     XDG_CURRENT_DESKTOP=GNOME xvfb-run -a -s '-screen 0 1280x720x24 -nolisten tcp' \
-    dbus-run-session -- bash /prototype-start.sh --session
+    dbus-run-session -- bash /usr/local/bin/steam-headless-start.sh --session

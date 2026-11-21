@@ -1,5 +1,5 @@
 # Debian 13 slim (Trixie)
-FROM debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+FROM debian:13-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 
 RUN set -eux; export DEBIAN_FRONTEND=noninteractive; \
     dpkg --add-architecture i386; \
@@ -21,11 +21,11 @@ RUN set -eux; export DEBIAN_FRONTEND=noninteractive; \
     rm -rf /var/lib/apt/lists/* /tmp/sunshine.deb; \
     test ! -e /usr/bin/startxfce4
 
-COPY --chmod=0644 start.sh /prototype-start.sh
-COPY --chmod=0644 input-devices.sh /input-devices.sh
-COPY --chmod=0644 xorg.conf /prototype-xorg.conf
+COPY --chmod=0644 start.sh /usr/local/bin/steam-headless-start.sh
+COPY --chmod=0644 input-devices.sh /usr/local/bin/steam-headless-input.sh
+COPY --chmod=0644 xorg.conf /etc/X11/steam-headless.conf
 COPY --chmod=0644 desktop-defaults /etc/dconf/db/local.d/00-steam-headless
 RUN mkdir -p /etc/dconf/profile && printf 'user-db:user\nsystem-db:local\n' > /etc/dconf/profile/user && dconf update \
     && useradd --uid 1000 --home-dir /home/default --create-home --shell /bin/bash gamer
 ENV LANG=C.UTF-8
-ENTRYPOINT ["/bin/bash", "/prototype-start.sh"]
+ENTRYPOINT ["/bin/bash", "/usr/local/bin/steam-headless-start.sh"]

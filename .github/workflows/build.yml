@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '23 4 * * 1'
 
 permissions:
   contents: read
@@ -19,4 +21,4 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and tag locally
-        run: docker build --tag "steam-headless-gnome:sha-${GITHUB_SHA}" .
+        run: docker build --pull --no-cache --tag "steam-headless-gnome:sha-${GITHUB_SHA}" .
