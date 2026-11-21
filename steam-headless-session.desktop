@@ -1,7 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Steam Headless session services
-Exec=/bin/bash /usr/local/bin/steam-headless-start.sh --gdm-apps
-OnlyShowIn=GNOME;
-NoDisplay=true
-X-GNOME-Autostart-enabled=true
