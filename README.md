@@ -9,7 +9,7 @@ A standalone **Debian 13 · GNOME on Xorg · Steam · Sunshine** container for L
 - 🖥️ GNOME on Xorg, with Colemak and German keyboard layouts, Dash to Dock, and a top-right **Extension List** menu
 - 🔔 AppIndicator shows Sunshine’s tray icon and Deskflow’s icon once its GUI is open. Existing profiles must have AppIndicator and Extension List enabled.
 - 📊 **System Monitor Next** shows system metrics in the top bar. **WACK Shell** and **WACK Sonoma Lockscreen** are installed and can be enabled from Extension List; they are off by default. System Pulse is not bundled because it requires GNOME Shell 50, while this image uses GNOME 48.
-- 🕹️ The Debian Steam installer with 32-bit Mesa graphics drivers. Open Steam from the desktop to download the client and sign in; games and Proton are not bundled.
+- 🕹️ The Debian Steam installer with AMD RADV and software Vulkan in both 64-bit and 32-bit. Other Vulkan GPU drivers are omitted from the image. Open Steam from the desktop to download the client and sign in; games and Proton are not bundled.
 - ☀️ Sunshine with software encoding in virtual mode and VAAPI configured in physical mode
 - 🦊 Firefox ESR
 - ⌨️ Deskflow for sharing a keyboard and mouse over the LAN. It does not start automatically, and the image does not publish its port.

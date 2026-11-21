@@ -1,5 +1,6 @@
 **
 !Dockerfile
+!amd-vulkan.dpkg
 !trixie-backports.sources
 !start.sh
 !input-devices.sh

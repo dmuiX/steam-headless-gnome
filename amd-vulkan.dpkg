@@ -1,0 +1,15 @@
+# Omit unused Vulkan ICDs on amd64 and i386. Keep RADV and lavapipe.
+path-exclude=/usr/lib/*-linux-gnu/libvulkan_asahi.so
+path-exclude=/usr/lib/*-linux-gnu/libvulkan_freedreno.so
+path-exclude=/usr/lib/*-linux-gnu/libvulkan_gfxstream.so
+path-exclude=/usr/lib/*-linux-gnu/libvulkan_intel.so
+path-exclude=/usr/lib/*-linux-gnu/libvulkan_intel_hasvk.so
+path-exclude=/usr/lib/*-linux-gnu/libvulkan_nouveau.so
+path-exclude=/usr/lib/*-linux-gnu/libvulkan_virtio.so
+path-exclude=/usr/share/vulkan/icd.d/asahi_icd*.json
+path-exclude=/usr/share/vulkan/icd.d/freedreno_icd*.json
+path-exclude=/usr/share/vulkan/icd.d/gfxstream_vk_icd*.json
+path-exclude=/usr/share/vulkan/icd.d/intel_icd*.json
+path-exclude=/usr/share/vulkan/icd.d/intel_hasvk_icd*.json
+path-exclude=/usr/share/vulkan/icd.d/nouveau_icd*.json
+path-exclude=/usr/share/vulkan/icd.d/virtio_icd*.json
