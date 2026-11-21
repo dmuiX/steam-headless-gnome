@@ -3,7 +3,11 @@ FROM debian:13-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c5
 
 COPY --chmod=0644 trixie-backports.sources /etc/apt/sources.list.d/trixie-backports.sources
 
+# CI passes the signed APT indexes' fingerprint to invalidate this layer on updates.
+ARG APT_INDEX_KEY=local
 RUN set -eux; export DEBIAN_FRONTEND=noninteractive; \
+    printf 'APT index cache key: %s\n' "$APT_INDEX_KEY"; \
+    printf '%s\n' 'path-exclude=/usr/share/help/*' > /etc/dpkg/dpkg.cfg.d/steam-headless-slim; \
     dpkg --add-architecture i386; \
     sed -i 's/^Components: main$/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources; \
     apt-get -o APT::Update::Error-Mode=any update; \
@@ -21,6 +25,7 @@ RUN set -eux; export DEBIAN_FRONTEND=noninteractive; \
       -o /tmp/sunshine.deb; \
     echo 'a86f858cbae57f60ecebd445402ee0295c1c057b857bd45d44c2ea2d255cbbfb  /tmp/sunshine.deb' | sha256sum -c; \
     apt-get install -y --no-install-recommends -t trixie-backports /tmp/sunshine.deb; \
+    apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/sunshine.deb; \
     test ! -e /usr/bin/startxfce4; \
     command -v deskflow; \
