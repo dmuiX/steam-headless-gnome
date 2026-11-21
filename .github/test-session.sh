@@ -31,6 +31,7 @@ docker exec --user gamer "$id" bash -ec '
     grep -qx "Exec=/usr/local/bin/steam-headless-bluez-env blueman-applet" /etc/xdg/autostart/blueman.desktop
     grep -qx "Exec=/usr/local/bin/steam-headless-bluez-env blueman-manager" /usr/share/applications/blueman-manager.desktop
     [[ -x /usr/local/bin/steam-headless-bluez-env ]]
+    test -r /usr/local/lib/steam-headless/sunshine-xtest-bridge.py
     grep -qx "Exec=/usr/local/bin/steam-headless-bluez-env /usr/bin/blueman-manager" /usr/share/dbus-1/services/org.blueman.Manager.service
     grep -qx "Exec=/usr/local/bin/steam-headless-bluez-env /usr/bin/blueman-applet" /usr/share/dbus-1/services/org.blueman.Applet.service
     printf "GNOME and Sunshine session ready.\n"

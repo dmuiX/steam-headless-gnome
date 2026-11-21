@@ -56,6 +56,8 @@ RUN set -eux; \
     glib-compile-schemas --strict "$destination/schemas"; \
     rm /tmp/wack-shell.tar.gz
 
+# COPY --chmod would give implicitly created parent directories the file mode and make them untraversable for UID 1000.
+RUN install -d -m 0755 /usr/local/lib/steam-headless /etc/dconf/db/local.d
 COPY --chmod=0644 start.sh /usr/local/bin/steam-headless-start.sh
 COPY --chmod=0755 bluez-env.sh /usr/local/bin/steam-headless-bluez-env
 COPY --chmod=0644 input-devices.sh /usr/local/bin/steam-headless-input.sh
