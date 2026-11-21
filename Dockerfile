@@ -1,0 +1,31 @@
+# Debian 13 slim (Trixie)
+FROM debian@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+
+RUN set -eux; export DEBIAN_FRONTEND=noninteractive; \
+    dpkg --add-architecture i386; \
+    sed -i 's/^Components: main$/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      ca-certificates curl dbus dbus-x11 systemd kmod \
+      gnome-session-xsession gnome-terminal gnome-shell-extension-appindicator gnome-shell-extension-dashtodock \
+      dconf-cli firefox-esr fonts-liberation \
+      xserver-xorg-core xserver-xorg-input-evdev xvfb xauth xinput x11-utils x11-xserver-utils \
+      pulseaudio pulseaudio-utils pulseaudio-module-bluetooth blueman bluez \
+      libgl1-mesa-dri libgl1-mesa-dri:i386 mesa-vulkan-drivers mesa-vulkan-drivers:i386 mesa-va-drivers \
+      steam-installer steam-devices; \
+    curl --fail --location --silent --show-error --proto '=https' --max-time 90 \
+      'https://github.com/SunshineStream/Sunshine/releases/download/v2026.914.233613/sunshine_2026.914.233613-1%2Bdebiantrixie_amd64.deb' \
+      -o /tmp/sunshine.deb; \
+    echo 'a86f858cbae57f60ecebd445402ee0295c1c057b857bd45d44c2ea2d255cbbfb  /tmp/sunshine.deb' | sha256sum -c; \
+    apt-get install -y --no-install-recommends /tmp/sunshine.deb; \
+    rm -rf /var/lib/apt/lists/* /tmp/sunshine.deb; \
+    test ! -e /usr/bin/startxfce4
+
+COPY --chmod=0644 start.sh /prototype-start.sh
+COPY --chmod=0644 input-devices.sh /input-devices.sh
+COPY --chmod=0644 xorg.conf /prototype-xorg.conf
+COPY --chmod=0644 desktop-defaults /etc/dconf/db/local.d/00-steam-headless
+RUN mkdir -p /etc/dconf/profile && printf 'user-db:user\nsystem-db:local\n' > /etc/dconf/profile/user && dconf update \
+    && useradd --uid 1000 --home-dir /home/default --create-home --shell /bin/bash gamer
+ENV LANG=C.UTF-8
+ENTRYPOINT ["/bin/bash", "/prototype-start.sh"]
