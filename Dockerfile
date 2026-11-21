@@ -72,11 +72,20 @@ COPY --chmod=0644 sunshine-xtest-bridge.py /usr/local/lib/steam-headless/sunshin
 COPY --chmod=0644 xorg.conf /etc/X11/steam-headless.conf
 COPY --chmod=0644 desktop-defaults /etc/dconf/db/local.d/00-steam-headless
 # Blueman must talk to the host BlueZ proxy, not the container system bus.
-RUN set -eux; \
-    sed -i 's#^Exec=blueman-applet$#Exec=/usr/local/bin/steam-headless-bluez-env blueman-applet#' /etc/xdg/autostart/blueman.desktop; \
-    sed -i 's#^Exec=blueman-manager$#Exec=/usr/local/bin/steam-headless-bluez-env blueman-manager#' /usr/share/applications/blueman-manager.desktop; \
-    grep -q '^Exec=/usr/local/bin/steam-headless-bluez-env blueman-applet$' /etc/xdg/autostart/blueman.desktop; \
-    grep -q '^Exec=/usr/local/bin/steam-headless-bluez-env blueman-manager$' /usr/share/applications/blueman-manager.desktop
+# The D-Bus activation files matter: the applet starts the manager through them.
+RUN set -eux; wrapper=/usr/local/bin/steam-headless-bluez-env; \
+    sed -i "s#^Exec=\(blueman-[a-z]*\)\$#Exec=$wrapper \1#" \
+        /etc/xdg/autostart/blueman.desktop \
+        /usr/share/applications/blueman-manager.desktop \
+        /usr/share/applications/blueman-adapters.desktop; \
+    sed -i "s#^Exec=\(/usr/bin/blueman-[a-z]*\)\$#Exec=$wrapper \1#" \
+        /usr/share/dbus-1/services/org.blueman.Applet.service \
+        /usr/share/dbus-1/services/org.blueman.Manager.service; \
+    if grep -L "^Exec=$wrapper " /etc/xdg/autostart/blueman.desktop \
+        /usr/share/applications/blueman-manager.desktop \
+        /usr/share/applications/blueman-adapters.desktop \
+        /usr/share/dbus-1/services/org.blueman.Applet.service \
+        /usr/share/dbus-1/services/org.blueman.Manager.service | grep -q .; then exit 1; fi
 RUN mkdir -p /etc/dconf/profile && printf 'user-db:user\nsystem-db:local\n' > /etc/dconf/profile/user && dconf update \
     && useradd --uid 1000 --home-dir /home/default --create-home --shell /bin/bash gamer
 ENV LANG=C.UTF-8
