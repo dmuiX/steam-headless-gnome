@@ -7,12 +7,12 @@ A standalone **Debian 13 · GNOME on Xorg · Steam · Sunshine** container for L
 ## ✨ What’s inside
 
 - 🖥️ GNOME on Xorg, with Colemak and German keyboard layouts, Dash to Dock, and a top-right **Extension List** menu
-- 🔔 AppIndicator shows Sunshine’s tray icon and Deskflow’s icon once its GUI is open. Existing profiles must have AppIndicator and Extension List enabled.
+- 🔔 AppIndicator shows Sunshine’s tray icon and Deskflow’s icon from its automatically launched GUI. Existing profiles must have AppIndicator and Extension List enabled.
 - 📊 **System Monitor Next** shows system metrics in the top bar. **WACK Shell** and **WACK Sonoma Lockscreen** are installed and can be enabled from Extension List; they are off by default. System Pulse is not bundled because it requires GNOME Shell 50, while this image uses GNOME 48.
 - 🕹️ The Debian Steam installer with AMD RADV and software Vulkan in both 64-bit and 32-bit. Other Vulkan GPU drivers are omitted from the image. Open Steam from the desktop to download the client and sign in; games and Proton are not bundled.
 - ☀️ Sunshine with software encoding in virtual mode and VAAPI configured in physical mode
 - 🦊 Firefox ESR
-- ⌨️ Deskflow for sharing a keyboard and mouse over the LAN. It does not start automatically, and the image does not publish its port.
+- ⌨️ Deskflow for sharing a keyboard and mouse over the LAN. The GUI starts with the desktop. The image does not publish its port or preconfigure a Deskflow peer.
 
 ### ⌨️ Deskflow
 
@@ -35,6 +35,10 @@ docker logs -f steam-headless-test
 This starts GNOME on a **virtual X11 display** without host input, display output or network access. After the Sunshine startup message, check the internal HTTPS endpoint with `docker exec steam-headless-test curl -k -sS -o /dev/null -w '%{http_code}\n' https://127.0.0.1:47990/`. Use `docker stop steam-headless-test` to clean up.
 
 For a physical setup, `PHYSICAL=1` expects host-specific DRM, VT and input device configuration. The included `xorg.conf` is an example, not a universal hardware profile. Use a dedicated host bind mount for `/home/default` writable by UID 1000 if you want persistent Steam and Sunshine state. Keep the Sunshine admin interface off the public internet.
+
+## 🔒 Password-protected desktop (development)
+
+The existing direct Xorg mode is not a security boundary for physical access. The `LOGIN_MODE=gdm` candidate uses GDM/Xorg and PAM with automatic and timed login disabled. It requires a private Docker cgroup namespace and accepts a read-only, root-owned `0400` password hash at `/run/secrets/desktop-password-hash`; never put the hash or password in the image, Git, or environment variables. It is not ready to deploy: the container runtime must first support the GDM/logind services, and physical login, lock and Moonlight unlock must pass end-to-end. The legacy mode is not a fallback when GDM mode fails.
 
 ## 📦 Debian Backports
 

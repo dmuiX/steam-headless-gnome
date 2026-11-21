@@ -3,6 +3,10 @@
 !amd-vulkan.dpkg
 !trixie-backports.sources
 !start.sh
+!start-gdm.sh
+!gdm.conf
+!gdm-logind.conf
+!steam-headless-session.desktop
 !input-devices.sh
 !sunshine-xtest-bridge.py
 !xorg.conf

@@ -2,15 +2,26 @@
 # Start the standalone GNOME/Xorg desktop and Sunshine inside Docker.
 set -euo pipefail
 [[ -e /.dockerenv ]] || { echo 'This script must run inside Docker.' >&2; exit 1; }
-if [[ ${1:-} == --session ]]; then
+if [[ ${1:-} == --gdm-apps ]]; then
+    [[ $EUID == 1000 && ${XDG_SESSION_TYPE:-} == x11 && -n ${XDG_SESSION_ID:-} ]] || exit 0
+    PHYSICAL=1
+    export BRIDGE_DISPLAY="$DISPLAY"
+    gnome_pid=$(pgrep -u "$UID" -xo gnome-shell)
+fi
+if [[ ${1:-} == --session || ${1:-} == --gdm-apps ]]; then
     [[ $EUID != 0 ]] || exit 1
     # Existing homes can override the image defaults and disable all panel extensions.
     if [[ $(gsettings get org.gnome.shell disable-user-extensions) == true ]]; then
         gsettings set org.gnome.shell disable-user-extensions false
     fi
-    gnome-session --session=gnome --disable-acceleration-check &
-    gnome_pid=$!
-    trap 'kill "$gnome_pid" "${sunshine_pid:-}" "${bridge_pid:-}" 2>/dev/null || true' EXIT
+    children=()
+    if [[ ${1:-} == --session ]]; then
+        gnome-session --session=gnome --disable-acceleration-check &
+        gnome_pid=$!
+        owned_gnome_pid=$gnome_pid
+        children+=("$gnome_pid")
+    fi
+    trap 'for pid in "${owned_gnome_pid:-}" "${sunshine_pid:-}" "${bridge_pid:-}" "${deskflow_pid:-}"; do if [[ -n $pid ]]; then kill "$pid" 2>/dev/null || true; fi; done' EXIT
     trap 'exit 143' TERM INT
     for ((attempt=0; attempt<30; attempt++)); do
         kill -0 "$gnome_pid"
@@ -53,15 +64,19 @@ if [[ ${1:-} == --session ]]; then
         fi
     fi
     # GNOME can own the X11 window manager before the tray watcher exists.
-    for ((attempt=0; attempt<10; attempt++)); do
+    for ((attempt=0; attempt<25; attempt++)); do
         if busctl --user --timeout=1s --auto-start=no get-property org.kde.StatusNotifierWatcher \
             /StatusNotifierWatcher org.kde.StatusNotifierWatcher IsStatusNotifierHostRegistered \
             2>/dev/null | grep -qx 'b true'; then break; fi
         sleep 1
     done
+    if (( attempt == 25 )); then echo 'GNOME tray host was not ready; tray icons may be unavailable.' >&2; fi
+    # Launch the GUI in the desktop session. The image publishes no Deskflow port.
+    deskflow &
+    deskflow_pid=$!
     sunshine "$config" system_tray=enabled &
     sunshine_pid=$!
-    children=("$gnome_pid" "$sunshine_pid")
+    children+=("$sunshine_pid")
     if [[ ${PHYSICAL:-0} == 1 ]]; then
         python3 /usr/local/lib/steam-headless/sunshine-xtest-bridge.py &
         bridge_pid=$!
@@ -78,6 +93,7 @@ if [[ ${1:-} == --session ]]; then
     printf '%s session process exited (status %s).\n' "$service" "$status"
     exit "$status"
 fi
+if [[ ${LOGIN_MODE:-} == gdm ]]; then exec bash /usr/local/bin/steam-headless-gdm.sh; fi
 runuser -u gamer -- test -w /home/default || { echo 'The desktop home is not writable by UID 1000.' >&2; exit 1; }
 runtime_dir=/run/steam-headless
 install -d -m 0700 -o gamer -g gamer "$runtime_dir"
