@@ -28,5 +28,8 @@ docker exec --user gamer "$id" bash -ec '
     busctl --system status org.freedesktop.UPower >/dev/null
     pgrep -x gsd-power >/dev/null
     test -s "$HOME/.config/sunshine/sunshine.conf"
+    grep -qx "Exec=/usr/local/bin/steam-headless-bluez-env blueman-applet" /etc/xdg/autostart/blueman.desktop
+    grep -qx "Exec=/usr/local/bin/steam-headless-bluez-env blueman-manager" /usr/share/applications/blueman-manager.desktop
+    [[ -x /usr/local/bin/steam-headless-bluez-env ]]
     printf "GNOME and Sunshine session ready.\n"
 '

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-scripts=(start.sh input-devices.sh .github/*.sh)
+scripts=(start.sh bluez-env.sh input-devices.sh .github/*.sh)
 for script in "${scripts[@]}"; do bash -n "$script"; done
 shellcheck "${scripts[@]}"
 
