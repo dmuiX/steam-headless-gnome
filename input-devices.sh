@@ -7,7 +7,8 @@ mode=${1:?Use init or watch.}
 [[ $mode == init || $mode == watch ]]
 install -d -m 0755 /dev/input
 
-declare -A previous current
+declare -A previous current pending
+[[ $mode != watch ]] || pending=()
 scan() {
     local entry dev db name alias label node signature major minor old
     current=()
@@ -23,10 +24,13 @@ scan() {
             alias=steam-headless-mouse-mxv; label='Unifying mouse'
         elif grep -Fxq 'S:input/steam-headless-mouse-rcv' "$db"; then
             alias=steam-headless-mouse-rcv; label='Bolt mouse'
-        elif [[ $(realpath -e "$entry" 2>/dev/null) == /sys/devices/virtual/* ]] &&
-            grep -Fxq 'E:ID_INPUT_JOYSTICK=1' "$db" &&
-            read -r name < "$entry/device/name" && [[ $name == 'Sunshine '* ]]; then
-            alias=${entry##*/}
+        elif [[ $(realpath -e "$entry" 2>/dev/null) == /sys/devices/virtual/input/* ]] &&
+            read -r name < "$entry/device/name"; then
+            case "$name" in
+                'libvirtualhid Keyboard'|'libvirtualhid Mouse'|'libvirtualhid Mouse (Absolute)') alias=${entry##*/} ;;
+                'Sunshine '*)
+                    if grep -Fxq 'E:ID_INPUT_JOYSTICK=1' "$db"; then alias=${entry##*/}; fi ;;
+            esac
         fi
         [[ -n $alias ]] || continue
         node=/dev/input/$alias
@@ -41,16 +45,24 @@ scan() {
                 chgrp gamer "$node"
                 chmod 0660 "$node"
             elif [[ $mode == watch ]]; then
-                # Reopen an already registered Xorg device, also when its minor is reused.
+                pending[$alias]=1
+            fi
+        fi
+        if [[ -v pending[$alias] ]]; then
+            # Retry until Xorg has reopened the device, even if its minor was reused.
+            if runuser -u gamer -- env DISPLAY=:55 XAUTHORITY=/run/steam-headless/Xauthority \
+                xinput disable "$label" >/dev/null 2>&1 &&
                 runuser -u gamer -- env DISPLAY=:55 XAUTHORITY=/run/steam-headless/Xauthority \
-                    xinput disable "$label" >/dev/null 2>&1 || true
-                runuser -u gamer -- env DISPLAY=:55 XAUTHORITY=/run/steam-headless/Xauthority \
-                    xinput enable "$label" >/dev/null 2>&1 || true
+                xinput enable "$label" >/dev/null 2>&1; then
+                unset 'pending[$alias]'
             fi
         fi
     done
     for alias in "${!previous[@]}"; do
-        if [[ ! -v current[$alias] ]]; then rm -f -- "/dev/input/$alias"; fi
+        if [[ ! -v current[$alias] ]]; then
+            rm -f -- "/dev/input/$alias"
+            unset 'pending[$alias]'
+        fi
     done
     previous=()
     for alias in "${!current[@]}"; do previous[$alias]=${current[$alias]}; done

@@ -6,7 +6,8 @@ if [[ ${1:-} == --session ]]; then
     [[ $EUID != 0 ]] || exit 1
     gnome-session --session=gnome --disable-acceleration-check &
     gnome_pid=$!
-    trap 'kill "$gnome_pid" "${sunshine_pid:-}" 2>/dev/null || true' EXIT
+    trap 'kill "$gnome_pid" "${sunshine_pid:-}" "${bridge_pid:-}" 2>/dev/null || true' EXIT
+    trap 'exit 143' TERM INT
     for ((attempt=0; attempt<30; attempt++)); do
         kill -0 "$gnome_pid"
         wm=$(xprop -root _NET_SUPPORTING_WM_CHECK | awk '/window id #/ {print $NF}')
@@ -49,10 +50,20 @@ if [[ ${1:-} == --session ]]; then
     fi
     sunshine "$config" &
     sunshine_pid=$!
+    children=("$gnome_pid" "$sunshine_pid")
+    if [[ ${PHYSICAL:-0} == 1 ]]; then
+        python3 /usr/local/lib/steam-headless/sunshine-xtest-bridge.py &
+        bridge_pid=$!
+        children+=("$bridge_pid")
+    fi
     status=0
     ended=unknown
-    wait -n -p ended "$gnome_pid" "$sunshine_pid" || status=$?
-    if [[ ${ended:-} == "$gnome_pid" ]]; then service=GNOME; else service=Sunshine; fi
+    wait -n -p ended "${children[@]}" || status=$?
+    case ${ended:-} in
+        "$gnome_pid") service=GNOME ;;
+        "$sunshine_pid") service=Sunshine ;;
+        *) service='Sunshine input bridge' ;;
+    esac
     printf '%s session process exited (status %s).\n' "$service" "$status"
     exit "$status"
 fi

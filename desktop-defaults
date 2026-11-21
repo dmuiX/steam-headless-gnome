@@ -3,4 +3,5 @@ sources=[('xkb', 'us+colemak'), ('xkb', 'de')]
 xkb-options=['altwin:swap_lalt_lwin']
 
 [org/gnome/shell]
+disable-user-extensions=false
 enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com', 'dash-to-dock@micxgx.gmail.com']

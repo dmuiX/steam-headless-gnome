@@ -21,8 +21,10 @@ RUN set -eux; export DEBIAN_FRONTEND=noninteractive; \
     rm -rf /var/lib/apt/lists/* /tmp/sunshine.deb; \
     test ! -e /usr/bin/startxfce4
 
+RUN python3 -c 'import ctypes; ctypes.CDLL("libXtst.so.6")'
 COPY --chmod=0644 start.sh /usr/local/bin/steam-headless-start.sh
 COPY --chmod=0644 input-devices.sh /usr/local/bin/steam-headless-input.sh
+COPY --chmod=0644 sunshine-xtest-bridge.py /usr/local/lib/steam-headless/sunshine-xtest-bridge.py
 COPY --chmod=0644 xorg.conf /etc/X11/steam-headless.conf
 COPY --chmod=0644 desktop-defaults /etc/dconf/db/local.d/00-steam-headless
 RUN mkdir -p /etc/dconf/profile && printf 'user-db:user\nsystem-db:local\n' > /etc/dconf/profile/user && dconf update \

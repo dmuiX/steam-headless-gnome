@@ -2,5 +2,6 @@
 !Dockerfile
 !start.sh
 !input-devices.sh
+!sunshine-xtest-bridge.py
 !xorg.conf
 !desktop-defaults
