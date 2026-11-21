@@ -42,9 +42,9 @@ scan() {
                 chmod 0660 "$node"
             elif [[ $mode == watch ]]; then
                 # Reopen an already registered Xorg device, also when its minor is reused.
-                runuser -u gamer -- env DISPLAY=:55 XAUTHORITY=/run/gnome-prototype/Xauthority \
+                runuser -u gamer -- env DISPLAY=:55 XAUTHORITY=/run/steam-headless/Xauthority \
                     xinput disable "$label" >/dev/null 2>&1 || true
-                runuser -u gamer -- env DISPLAY=:55 XAUTHORITY=/run/gnome-prototype/Xauthority \
+                runuser -u gamer -- env DISPLAY=:55 XAUTHORITY=/run/steam-headless/Xauthority \
                     xinput enable "$label" >/dev/null 2>&1 || true
             fi
         fi
