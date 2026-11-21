@@ -42,7 +42,7 @@ The build prefers `trixie-backports` for all APT package installations, includin
 
 ## 🤖 CI and updates
 
-- Pull requests build and smoke-test the image without registry write access. On `main`, pushes and manual dispatch build, test and scan before publishing to GHCR.
+- Pull requests run Bash syntax checks, ShellCheck and actionlint. To build and smoke-test a branch before merging, select that branch under **Actions → Build container image → Run workflow**, or run `gh workflow run build.yml --ref <branch>`. Neither path can publish. On `main`, pushes and manual dispatch build, test and scan before publishing to GHCR.
 - 🔍 Trivy blocks publishing on fixable HIGH and CRITICAL findings and generates a CycloneDX SBOM as a workflow artifact. The exact tested image is published under `latest` and a unique `sha-<commit>-<run>-<attempt>` tag. For reproducible deployment, pin the registry digest.
 - The hourly schedule (minute 23 UTC) checks the Debian package indexes, including security updates. If the indexes or revision have changed since a successful scheduled publish, it builds again. Release builds reuse Docker layers from GitHub Actions Cache; the APT layer is invalidated when the package-index fingerprint or the package-install instructions change. This checks repository indexes, not whether an individual changed package is installed in the image. GitHub may delay scheduled runs.
 - Dependabot checks the pinned Debian base daily and GitHub Actions weekly, proposing changes via pull request. The separately downloaded Sunshine package stays pinned; update its URL and SHA-256 together.

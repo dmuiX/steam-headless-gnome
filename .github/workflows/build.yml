@@ -16,6 +16,17 @@ jobs:
   pull-request:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check shell scripts and workflows
+        run: bash .github/lint.sh
+
+  manual-test:
+    if: github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main'
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -121,7 +132,7 @@ jobs:
           docker tag steam-headless-gnome:test "$image:latest"
           docker push "$image:$version"
           docker push "$image:latest"
-          printf 'Published `%s` and `%s`.\n' "$image:$version" "$image:latest" >> "$GITHUB_STEP_SUMMARY"
+          printf "Published \`%s\` and \`%s\`.\n" "$image:$version" "$image:latest" >> "$GITHUB_STEP_SUMMARY"
       - name: Remember the successful scheduled build
         if: github.event_name == 'schedule' && steps.built.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
