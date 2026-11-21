@@ -1,0 +1,6 @@
+[org/gnome/desktop/input-sources]
+sources=[('xkb', 'us+colemak'), ('xkb', 'de')]
+xkb-options=['altwin:swap_lalt_lwin']
+
+[org/gnome/shell]
+enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com', 'dash-to-dock@micxgx.gmail.com']
