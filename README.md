@@ -2,7 +2,7 @@
 
 A standalone **Debian 13 · GNOME on Xorg · Steam · Sunshine** container for Linux gaming. No XFCE and no dependency on another Steam Headless image.
 
-> 🧪 **Preview · Linux amd64.** The isolated desktop works. Physical display, receiver reconnect, Moonlight gamepad and local Bluetooth audio still need end-to-end testing for this build. There is no published image yet.
+> 🐧 **Linux amd64.** The isolated desktop works. Physical display, receiver reconnect, Moonlight gamepad and local Bluetooth audio still need end-to-end testing for this build. Build locally; there is no published registry image yet.
 
 ## ✨ What’s inside
 
@@ -27,6 +27,6 @@ For a physical setup, `PHYSICAL=1` expects host-specific DRM, VT and input devic
 
 ## 🤖 CI and updates
 
-- GitHub Actions builds on pushes to `main`, pull requests, manual dispatch and every Monday. It tags the image `steam-headless-gnome:sha-<commit>` on the runner. **No registry push.**
-- The scheduled build starts without Docker layer cache so it picks up current Debian packages from the configured repositories, even with no source changes.
-- Dependabot checks the pinned Debian base and GitHub Actions weekly and proposes updates via pull request. The separately downloaded Sunshine package stays pinned; update its URL and SHA-256 together.
+- GitHub Actions builds on pushes to `main`, pull requests and manual dispatch. It tags the image `steam-headless-gnome:sha-<commit>` on the runner. **No registry push.**
+- The hourly schedule (minute 23 UTC) checks the Debian package indexes, including security updates. If the indexes or revision have changed since a successful scheduled build, it builds without Docker layer cache. This checks repository indexes, not whether an individual changed package is installed in the image. GitHub may delay scheduled runs.
+- Dependabot checks the pinned Debian base daily and GitHub Actions weekly, proposing changes via pull request. The separately downloaded Sunshine package stays pinned; update its URL and SHA-256 together.

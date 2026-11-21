@@ -7,7 +7,7 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: '23 4 * * 1'
+    - cron: '23 * * * *'
 
 permissions:
   contents: read
@@ -20,5 +20,30 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+      - name: Check Debian package indexes
+        if: github.event_name == 'schedule'
+        id: debian
+        shell: bash
+        run: |
+          fingerprint=$(bash .github/debian-index-key.sh)
+          [[ $fingerprint =~ ^[a-f0-9]{64}$ ]]
+          mkdir -p "$RUNNER_TEMP/debian-build-marker"
+          printf '%s\n' "$fingerprint" > "$RUNNER_TEMP/debian-build-marker/fingerprint"
+          printf 'key=debian-index-v1-%s-%s\n' "$GITHUB_SHA" "$fingerprint" >> "$GITHUB_OUTPUT"
+      - name: Look up the last successful build for these indexes
+        if: github.event_name == 'schedule'
+        id: built
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/debian-build-marker
+          key: ${{ steps.debian.outputs.key }}
+          lookup-only: true
       - name: Build and tag locally
+        if: github.event_name != 'schedule' || steps.built.outputs.cache-hit != 'true'
         run: docker build --pull --no-cache --tag "steam-headless-gnome:sha-${GITHUB_SHA}" .
+      - name: Remember the successful scheduled build
+        if: github.event_name == 'schedule' && steps.built.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/debian-build-marker
+          key: ${{ steps.debian.outputs.key }}
