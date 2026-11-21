@@ -1,5 +1,6 @@
 **
 !Dockerfile
+!trixie-backports.sources
 !start.sh
 !input-devices.sh
 !sunshine-xtest-bridge.py

@@ -4,4 +4,4 @@ xkb-options=['altwin:swap_lalt_lwin']
 
 [org/gnome/shell]
 disable-user-extensions=false
-enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com', 'dash-to-dock@micxgx.gmail.com']
+enabled-extensions=['ubuntu-appindicators@ubuntu.com', 'dash-to-dock@micxgx.gmail.com', 'extension-list@tu.berry', 'system-monitor-next@paradoxxx.zero.gmail.com']

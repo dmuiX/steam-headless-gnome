@@ -3,7 +3,10 @@
 set -euo pipefail
 base=$(awk '$1 == "FROM" { print $2; exit }' Dockerfile)
 [[ $base =~ ^debian:13-slim@sha256:[a-f0-9]{64}$ ]]
-docker run --rm --platform linux/amd64 --entrypoint /bin/bash "$base" -ec '
+backports=$(realpath -e trixie-backports.sources)
+docker run --rm --platform linux/amd64 \
+    --mount "type=bind,src=$backports,dst=/etc/apt/sources.list.d/trixie-backports.sources,readonly" \
+    --entrypoint /bin/bash "$base" -ec '
     set -o pipefail
     dpkg --add-architecture i386
     sed -i "s/^Components: main$/Components: main contrib non-free non-free-firmware/" /etc/apt/sources.list.d/debian.sources

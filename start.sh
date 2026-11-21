@@ -41,14 +41,14 @@ if [[ ${1:-} == --session ]]; then
         pactl load-module module-null-sink sink_name=steam_headless_audio >/dev/null
         pactl set-default-sink steam_headless_audio
         if [[ ! -e $config ]]; then
-            printf 'capture = x11\nencoder = vaapi\nadapter_name = /dev/dri/renderD128\norigin_web_ui_allowed = lan\ngamepad = x360\nsystem_tray = disabled\n' > "$config"
+            printf 'capture = x11\nencoder = vaapi\nadapter_name = /dev/dri/renderD128\norigin_web_ui_allowed = lan\ngamepad = x360\n' > "$config"
         fi
     else
         if [[ ! -e $config ]]; then
             printf 'capture = x11\nencoder = software\norigin_web_ui_allowed = pc\n' > "$config"
         fi
     fi
-    sunshine "$config" &
+    sunshine "$config" system_tray=enabled &
     sunshine_pid=$!
     children=("$gnome_pid" "$sunshine_pid")
     if [[ ${PHYSICAL:-0} == 1 ]]; then
