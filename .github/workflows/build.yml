@@ -3,8 +3,14 @@ name: Build container image
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   workflow_dispatch:
   schedule:
     - cron: '23 * * * *'
@@ -43,8 +49,8 @@ jobs:
       contents: read
       packages: write
     concurrency:
-      group: ghcr-main
-      cancel-in-progress: false
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
