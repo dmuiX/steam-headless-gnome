@@ -1,6 +1,18 @@
 # Debian 13 slim (Trixie)
 FROM debian:13-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 
+# Pinned upstream artifacts (updated automatically by .github/workflows/update-pins.yml)
+ARG SUNSHINE_VERSION=2026.914.233613
+ARG SUNSHINE_SHA256=a86f858cbae57f60ecebd445402ee0295c1c057b857bd45d44c2ea2d255cbbfb
+ARG EXT_EXTENSION_LIST_TAG=63089
+ARG EXT_EXTENSION_LIST_SHA256=dfa5b8effd344f15343cb57c85fd80762b22d2f71b8e5554f6fcc21d8b1ed936
+ARG EXT_WACK_LOCKSCREEN_TAG=76044
+ARG EXT_WACK_LOCKSCREEN_SHA256=749272d6553d0e988ceeb778aecd0fc653723012e845ee00601e97557771b69c
+ARG EXT_SYSTEM_MONITOR_TAG=76945
+ARG EXT_SYSTEM_MONITOR_SHA256=61dae39b6b7e0a817b7143454477df99c1ad204b1b62685c9a0308e815c9de39
+ARG WACK_SHELL_COMMIT=bfd72b56ade0db75a86bd7ac57f8e39143e920a9
+ARG WACK_SHELL_SHA256=2b9026142eb95111ccc96e4f2057ad1e670744ec415afff16c62fcc1d2ea4515
+
 COPY --chmod=0644 amd-vulkan.dpkg /etc/dpkg/dpkg.cfg.d/steam-headless-amd-vulkan
 COPY --chmod=0644 trixie-backports.sources /etc/apt/sources.list.d/trixie-backports.sources
 
@@ -22,9 +34,9 @@ RUN set -eux; export DEBIAN_FRONTEND=noninteractive; \
       libgl1-mesa-dri libgl1-mesa-dri:i386 mesa-vulkan-drivers mesa-vulkan-drivers:i386 mesa-va-drivers \
       steam-installer steam-devices; \
     curl --fail --location --silent --show-error --proto '=https' --max-time 90 \
-      'https://github.com/SunshineStream/Sunshine/releases/download/v2026.914.233613/sunshine_2026.914.233613-1%2Bdebiantrixie_amd64.deb' \
+      "https://github.com/SunshineStream/Sunshine/releases/download/v${SUNSHINE_VERSION}/sunshine_${SUNSHINE_VERSION}-1%2Bdebiantrixie_amd64.deb" \
       -o /tmp/sunshine.deb; \
-    echo 'a86f858cbae57f60ecebd445402ee0295c1c057b857bd45d44c2ea2d255cbbfb  /tmp/sunshine.deb' | sha256sum -c; \
+    printf '%s  /tmp/sunshine.deb\n' "$SUNSHINE_SHA256" | sha256sum -c; \
     apt-get install -y --no-install-recommends -t trixie-backports /tmp/sunshine.deb; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/sunshine.deb; \
@@ -45,11 +57,11 @@ RUN set -eux; \
       glib-compile-schemas --strict "$destination/schemas"; \
       rm /tmp/extension.zip; \
     }; \
-    install_extension extension-list@tu.berry 63089 dfa5b8effd344f15343cb57c85fd80762b22d2f71b8e5554f6fcc21d8b1ed936; \
-    install_extension wack-lockscreen-clock@rinzler69-wastaken.github.com 76044 749272d6553d0e988ceeb778aecd0fc653723012e845ee00601e97557771b69c; \
-    install_extension system-monitor-next@paradoxxx.zero.gmail.com 76945 61dae39b6b7e0a817b7143454477df99c1ad204b1b62685c9a0308e815c9de39; \
-    fetch 'https://codeload.github.com/rinzler69-wastaken/wack-shell/tar.gz/bfd72b56ade0db75a86bd7ac57f8e39143e920a9' \
-      2b9026142eb95111ccc96e4f2057ad1e670744ec415afff16c62fcc1d2ea4515 /tmp/wack-shell.tar.gz; \
+    install_extension extension-list@tu.berry "$EXT_EXTENSION_LIST_TAG" "$EXT_EXTENSION_LIST_SHA256"; \
+    install_extension wack-lockscreen-clock@rinzler69-wastaken.github.com "$EXT_WACK_LOCKSCREEN_TAG" "$EXT_WACK_LOCKSCREEN_SHA256"; \
+    install_extension system-monitor-next@paradoxxx.zero.gmail.com "$EXT_SYSTEM_MONITOR_TAG" "$EXT_SYSTEM_MONITOR_SHA256"; \
+    fetch "https://codeload.github.com/rinzler69-wastaken/wack-shell/tar.gz/${WACK_SHELL_COMMIT}" \
+      "$WACK_SHELL_SHA256" /tmp/wack-shell.tar.gz; \
     destination=/usr/share/gnome-shell/extensions/wack-shell@rinzler69-wastaken.github.com; \
     install -d "$destination"; \
     tar -xzf /tmp/wack-shell.tar.gz -C "$destination" --strip-components=1 --no-same-owner; \
